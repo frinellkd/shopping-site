@@ -7,7 +7,8 @@ Authors: Joel Burton, Christian Fernandez, Meggie Mahnken.
 """
 
 
-from flask import Flask, render_template, redirect, flash, session, request
+from flask import Flask, render_template, redirect, flash, session, request, url_for
+
 import jinja2
 
 import model
@@ -51,7 +52,6 @@ def show_melon(id):
     """
 
     melon = model.Melon.get_by_id(id)
-    print melon
     return render_template("melon_details.html",
                            display_melon=melon)
 
@@ -59,11 +59,28 @@ def show_melon(id):
 @app.route("/cart")
 def shopping_cart():
     """Display content of shopping cart."""
+    melons_bought = {}
+    
+    for melon in session['cart']:
+        melon_info = model.Melon.get_by_id(melon)
+        name = str(melon_info.common_name)
+        price = float(melon_info.price)
 
-    # TODO: Display the contents of the shopping cart.
-    #   - The cart is a list in session containing melons added
 
-    return render_template("cart.html")
+        if name in melons_bought:
+            melons_bought[name]['price'] = price
+            melons_bought[name]['quantity'] += 1
+            melons_bought[name]['cost'] = (melons_bought[name]['price'] * melons_bought[name]['quantity'])
+        else:
+            melons_bought[name]={}
+            melons_bought[name]['price'] = price
+            melons_bought[name]['quantity'] = 1
+            melons_bought[name]['cost'] = (melons_bought[name]['price'] * melons_bought[name]['quantity'])
+      
+
+    print melons_bought
+
+    return render_template("cart.html", melons_bought=melons_bought)
 
 
 @app.route("/add_to_cart/<int:id>")
@@ -79,11 +96,13 @@ def add_to_cart(id):
         session['cart']= [id]
     # TODO: Finish shopping cart functionality
     #   - use session variables to hold cart list
-
-
-    # print session['cart']
-    return session.get()
-
+    melon_info = model.Melon.get_by_id(id)
+    melon_name = str(melon_info.common_name)
+    
+    
+    flash("Just added a %s to your shopping cart" % melon_name)  
+    
+    return redirect("/cart")
 
 @app.route("/login", methods=["GET", "POST"])
 def show_login():
@@ -101,7 +120,7 @@ def process_login():
     """
 
     username = request.form.get('email')
-    password = request.form.get('password')
+    
 
     session['username'] = username
     # user_name = session['username']

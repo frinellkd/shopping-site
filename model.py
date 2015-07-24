@@ -69,8 +69,6 @@ class Melon(object):
 
         melons = [Melon(*row) for row in melon_rows]
 
-        print melons
-
         return melons
 
     @classmethod
